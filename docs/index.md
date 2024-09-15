@@ -1,18 +1,23 @@
+[![Unit tests](https://github.com/mrikirill/KTSynologyDDNSCloudflareMultidomain/actions/workflows/test.yml/badge.svg)](https://github.com/mrikirill/KTSynologyDDNSCloudflareMultidomain/actions/workflows/test.yml)
 
 # Synology Dynamic DNS Native Agent for Cloudflare (Multidomains & Subdomains)
 
-> This project is based on my PHP version of the agent: https://github.com/mrikirill/SynologyDDNSCloudflareMultidomain
+This project is based on my PHP version of the agent: https://github.com/mrikirill/SynologyDDNSCloudflareMultidomain
+
+Documentation website: https://mrikirill.github.io/KTSynologyDDNSCloudflareMultidomain/
+
+[![Sponsor](https://img.shields.io/badge/sponsor-GitHub%20Sponsors-brightgreen)](https://github.com/sponsors/mrikirill)
 
 ## Why this project?
 
 The idea of this project is to provide a native agent for [Synology DSM](https://www.synology.com/en-global/dsm) and [SRM](https://www.synology.com/en-global/srm) devices ⚠️(read [here](#srm-support)) to update Cloudflare DNS records without requiring any dependencies.
 
-This project is based on [the original PHP version of the agent](https://github.com/mrikirill/SynologyDDNSCloudflareMultidomain) but is written in [Kotlin Native](https://kotlinlang.org/docs/native-overview.html) and does not require the JVM. The agent is a standalone executable file that doesn't rely on system dependencies, which is the main difference from the PHP version. Additionally, it includes unit tests covering the main logic of the agent.
+This project is based on [the original PHP version of the agent](https://github.com/mrikirill/SynologyDDNSCloudflareMultidomain) but is written in [Kotlin Native](https://kotlinlang.orgnative-overview.html) and does not require the JVM. The agent is a standalone executable file that doesn't rely on system dependencies, which is the main difference from the PHP version. Additionally, it includes unit tests covering the main logic of the agent.
 
 ## Stack
 
-- [Kotlin Native](https://kotlinlang.org/docs/native-overview.html) with target [linuxX64 and linuxArm64](https://kotlinlang.org/docs/native-target-support.html#tier-2)
-- [Ktor Client Curl Engine](https://ktor.io/docs/client-engines.html#curl)
+- [Kotlin Native](https://kotlinlang.orgnative-overview.html) with target [linuxX64 and linuxArm64](https://kotlinlang.orgnative-target-support.html#tier-2)
+- [Ktor Client Curl Engine](https://ktor.ioclient-engines.html#curl)
 
 ## Table of contents
 
@@ -22,11 +27,12 @@ This project is based on [the original PHP version of the agent](https://github.
 * [Before you start](#before-you-start)
 * [How to install](#how-to-install)
 * [Troubleshooting and known issues](#troubleshooting-and-known-issues)
-    + [CloudFlare API free domains limitation](#cloudflare-api-free-domains-limitation)
-    + [Connection test failed or error returned](#connection-test-failed-or-error-returned)
-    + [Cloudflare no longer listed as a DDNS provider after a DSM update](#cloudflare-no-longer-listed-as-a-ddns-provider-after-dsm-or-srm-updates)
+   + [CloudFlare API free domains limitation](#cloudflare-api-free-domains-limitation)
+   + [Connection test failed or error returned](#connection-test-failed-or-error-returned)
+   + [Cloudflare no longer listed as a DDNS provider after a DSM update](#cloudflare-no-longer-listed-as-a-ddns-provider-after-dsm-or-srm-updates)
 * [Default Cloudflare ports](#default-cloudflare-ports)
 * [Debug script](#debug)
+* [Output messages](#output-messages)
 * [Credits](#credits)
 * [Support this project](#support-this-project)
 
@@ -47,7 +53,7 @@ This project is based on [the original PHP version of the agent](https://github.
 
 ## Build the agent locally
 
-1. Kotlin Native Documentation [here](https://kotlinlang.org/docs/native-get-started.html)
+1. Kotlin Native Documentation [here](https://kotlinlang.orgnative-get-started.html)
 
 2. Clone the repository
 
@@ -57,7 +63,7 @@ This project is based on [the original PHP version of the agent](https://github.
 ./gradlew build
 ```
 
-Note: cause the agent includes the Ktor Client Curl Engine it requires extra steps documented [here](https://ktor.io/docs/client-engines.html#curl)
+Note: cause the agent includes the Ktor Client Curl Engine it requires extra steps documented [here](https://ktor.ioclient-engines.html#curl)
 
 ## Before you start
 
@@ -69,7 +75,7 @@ Before starting the installation process, make sure you have (and know) the foll
 
    b. Have your [API key](https://dash.cloudflare.com/profile/api-tokens) - no need to use your Global API key! (More info: [API keys](https://support.cloudflare.com/hc/en-us/articles/200167836-Managing-API-Tokens-and-Keys)).
 
-   ![image](/docs/example4.png)
+   ![image](example4.png)
 
 
 	 c. Create a API key with following (3) permissions:
@@ -90,7 +96,7 @@ Before starting the installation process, make sure you have (and know) the foll
 
    (Note: Having Proxied turned on for your A records isn't necessary, but it will prevent those snooping around from easily finding out your current IP address)
 
-   ![image](/docs/example1.png)
+   ![image](example1.png)
 
 3. *SSH access to your Synology device:*
 
@@ -110,7 +116,7 @@ If you haven't setup this access, see the following Synology Knowledge Base arti
 
    Navigate to __Control Panel > Services > System Services > Terminal > Enable SSH service__
 
-   ![image](/docs/example2.png)
+   ![image](example2.png)
 
 2. **Connect via SSH:** Connect to your supported device via SSH and run this command:
 
@@ -127,17 +133,17 @@ If you haven't setup this access, see the following Synology Knowledge Base arti
 
    Add/Update the DDNS settings screen as follows:
 
-    * Service provider: Select Cloudflare
-    * Hostname: this field is not used anymore, you can put any value here
-    * Username:
-      For a single domain: __mydomain.com__
-      For multiple domains: __subdomain.mydomain.com|vpn.mydomain.com__
-      (ensure each domain is separated: `|`)
+   * Service provider: Select Cloudflare
+   * Hostname: this field is not used anymore, you can put any value here
+   * Username:
+     For a single domain: __mydomain.com__
+     For multiple domains: __subdomain.mydomain.com|vpn.mydomain.com__
+     (ensure each domain is separated: `|`)
 
-      __Note: there is 256 symbols limit on Hostname input__
-    * Password: Your created Cloudflare API Key
+     __Note: there is 256 symbols limit on Hostname input__
+   * Password: Your created Cloudflare API Key
 
-   ![image](/docs/example3.png)
+   ![image](example3.png)
 
    Finally, press the test connection button to confirm all information is correctly entered, before pressing Ok to save and confirm your details.
 
@@ -203,10 +209,37 @@ You can run this script directly to see output logs
 * Run this command:
 
 ```
-./KTSynologyDDNSCloudflareMultidomain.kexe "" "domain1.com|vpn.domain2.com" "your-Cloudflare-token" "" "1.2.3.4 - ipv4 adress"
+./KTSynologyDDNSCloudflareMultidomain.kexe "domain1.com|vpn.domain2.com" "your-Cloudflare-token" "any" "1.2.3.4 - ipv4 address"
 ```
 
 * Check output logs
+
+## Output messages
+
+From `/etc.defaults/ddns_provider.conf`:
+
+> When you write your own module, you can use the following words to tell user what happen by print it.
+> You can use your own message, but there is no multiple-language support.
+
+>`good` -  Update successfully.
+>
+>`nochg` - Update successfully but the IP address have not changed.
+>
+>`nohost` - The hostname specified does not exist in this user account.
+>
+>`abuse` - The hostname specified is blocked for update abuse.
+>
+>`notfqdn` - The hostname specified is not a fully-qualified domain name.
+>
+>`badauth` - Authenticate failed.
+>
+>`911` - There is a problem or scheduled maintenance on provider side
+>
+>`badagent` - The user agent sent bad request(like HTTP method/parameters is not permitted)
+>
+>`badresolv` - Failed to connect to  because failed to resolve provider address.
+>
+>`badconn` - Failed to connect to provider because connection timeout.
 
 ## Credits
 

@@ -32,6 +32,7 @@ This project is based on [the original PHP version of the agent](https://github.
   + [Cloudflare no longer listed as a DDNS provider after a DSM update](#cloudflare-no-longer-listed-as-a-ddns-provider-after-dsm-or-srm-updates)
 * [Default Cloudflare ports](#default-cloudflare-ports)
 * [Debug script](#debug)
+* [Output messages](#output-messages)
 * [Credits](#credits)
 * [Support this project](#support-this-project)
 
@@ -212,6 +213,33 @@ You can run this script directly to see output logs
 ```
 
 * Check output logs
+
+## Output messages
+
+From `/etc.defaults/ddns_provider.conf`:
+
+> When you write your own module, you can use the following words to tell user what happen by print it.
+> You can use your own message, but there is no multiple-language support.
+
+>`good` -  Update successfully.
+>
+>`nochg` - Update successfully but the IP address have not changed.
+>
+>`nohost` - The hostname specified does not exist in this user account.
+>
+>`abuse` - The hostname specified is blocked for update abuse.
+>
+>`notfqdn` - The hostname specified is not a fully-qualified domain name.
+>
+>`badauth` - Authenticate failed.
+>
+>`911` - There is a problem or scheduled maintenance on provider side
+>
+>`badagent` - The user agent sent bad request(like HTTP method/parameters is not permitted)
+>
+>`badresolv` - Failed to connect to  because failed to resolve provider address.
+>
+>`badconn` - Failed to connect to provider because connection timeout.
 
 ## Credits
 
