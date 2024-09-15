@@ -100,7 +100,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Synology Dynamic DNS Native Agent for Cloudflare (Multidomains &amp; Subdomains)
+              Home
             
           </span>
         </div>
@@ -230,7 +230,7 @@
           
   
   <span class="md-ellipsis">
-    Synology Dynamic DNS Native Agent for Cloudflare (Multidomains &amp; Subdomains)
+    Home
   </span>
   
 
@@ -241,7 +241,7 @@
         
   
   <span class="md-ellipsis">
-    Synology Dynamic DNS Native Agent for Cloudflare (Multidomains &amp; Subdomains)
+    Home
   </span>
   
 
@@ -389,6 +389,15 @@
   <a href="#debug" class="md-nav__link">
     <span class="md-ellipsis">
       Debug
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#output-messages" class="md-nav__link">
+    <span class="md-ellipsis">
+      Output messages
     </span>
   </a>
   
@@ -579,6 +588,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#output-messages" class="md-nav__link">
+    <span class="md-ellipsis">
+      Output messages
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#credits" class="md-nav__link">
     <span class="md-ellipsis">
       Credits
@@ -614,17 +632,18 @@
   
 
 
+<p><a href="https://github.com/mrikirill/KTSynologyDDNSCloudflareMultidomain/actions/workflows/test.yml"><img alt="Unit tests" src="https://github.com/mrikirill/KTSynologyDDNSCloudflareMultidomain/actions/workflows/test.yml/badge.svg" /></a></p>
 <h1 id="synology-dynamic-dns-native-agent-for-cloudflare-multidomains-subdomains">Synology Dynamic DNS Native Agent for Cloudflare (Multidomains &amp; Subdomains)</h1>
-<blockquote>
 <p>This project is based on my PHP version of the agent: https://github.com/mrikirill/SynologyDDNSCloudflareMultidomain</p>
-</blockquote>
+<p>Documentation website: https://mrikirill.github.io/KTSynologyDDNSCloudflareMultidomain/</p>
+<p><a href="https://github.com/sponsors/mrikirill"><img alt="Sponsor" src="https://img.shields.io/badge/sponsor-GitHub%20Sponsors-brightgreen" /></a></p>
 <h2 id="why-this-project">Why this project?</h2>
 <p>The idea of this project is to provide a native agent for <a href="https://www.synology.com/en-global/dsm">Synology DSM</a> and <a href="https://www.synology.com/en-global/srm">SRM</a> devices ⚠️(read <a href="#srm-support">here</a>) to update Cloudflare DNS records without requiring any dependencies.</p>
-<p>This project is based on <a href="https://github.com/mrikirill/SynologyDDNSCloudflareMultidomain">the original PHP version of the agent</a> but is written in <a href="https://kotlinlang.org/docs/native-overview.html">Kotlin Native</a> and does not require the JVM. The agent is a standalone executable file that doesn't rely on system dependencies, which is the main difference from the PHP version. Additionally, it includes unit tests covering the main logic of the agent.</p>
+<p>This project is based on <a href="https://github.com/mrikirill/SynologyDDNSCloudflareMultidomain">the original PHP version of the agent</a> but is written in <a href="https://kotlinlang.orgnative-overview.html">Kotlin Native</a> and does not require the JVM. The agent is a standalone executable file that doesn't rely on system dependencies, which is the main difference from the PHP version. Additionally, it includes unit tests covering the main logic of the agent.</p>
 <h2 id="stack">Stack</h2>
 <ul>
-<li><a href="https://kotlinlang.org/docs/native-overview.html">Kotlin Native</a> with target <a href="https://kotlinlang.org/docs/native-target-support.html#tier-2">linuxX64 and linuxArm64</a></li>
-<li><a href="https://ktor.io/docs/client-engines.html#curl">Ktor Client Curl Engine</a></li>
+<li><a href="https://kotlinlang.orgnative-overview.html">Kotlin Native</a> with target <a href="https://kotlinlang.orgnative-target-support.html#tier-2">linuxX64 and linuxArm64</a></li>
+<li><a href="https://ktor.ioclient-engines.html#curl">Ktor Client Curl Engine</a></li>
 </ul>
 <h2 id="table-of-contents">Table of contents</h2>
 <ul>
@@ -633,14 +652,13 @@
 <li><a href="#build-the-agent-locally">Build the agent locally</a></li>
 <li><a href="#before-you-start">Before you start</a></li>
 <li><a href="#how-to-install">How to install</a></li>
-<li><a href="#troubleshooting-and-known-issues">Troubleshooting and known issues</a><ul>
+<li><a href="#troubleshooting-and-known-issues">Troubleshooting and known issues</a></li>
 <li><a href="#cloudflare-api-free-domains-limitation">CloudFlare API free domains limitation</a></li>
 <li><a href="#connection-test-failed-or-error-returned">Connection test failed or error returned</a></li>
 <li><a href="#cloudflare-no-longer-listed-as-a-ddns-provider-after-dsm-or-srm-updates">Cloudflare no longer listed as a DDNS provider after a DSM update</a></li>
-</ul>
-</li>
 <li><a href="#default-cloudflare-ports">Default Cloudflare ports</a></li>
 <li><a href="#debug">Debug script</a></li>
+<li><a href="#output-messages">Output messages</a></li>
 <li><a href="#credits">Credits</a></li>
 <li><a href="#support-this-project">Support this project</a></li>
 </ul>
@@ -660,7 +678,7 @@
 <h2 id="build-the-agent-locally">Build the agent locally</h2>
 <ol>
 <li>
-<p>Kotlin Native Documentation <a href="https://kotlinlang.org/docs/native-get-started.html">here</a></p>
+<p>Kotlin Native Documentation <a href="https://kotlinlang.orgnative-get-started.html">here</a></p>
 </li>
 <li>
 <p>Clone the repository</p>
@@ -671,7 +689,7 @@
 </ol>
 <pre><code>./gradlew build
 </code></pre>
-<p>Note: cause the agent includes the Ktor Client Curl Engine it requires extra steps documented <a href="https://ktor.io/docs/client-engines.html#curl">here</a></p>
+<p>Note: cause the agent includes the Ktor Client Curl Engine it requires extra steps documented <a href="https://ktor.ioclient-engines.html#curl">here</a></p>
 <h2 id="before-you-start">Before you start</h2>
 <p>Before starting the installation process, make sure you have (and know) the following information, or have completed these steps:</p>
 <ol>
@@ -679,7 +697,7 @@
 </ol>
 <p>a. Know your Cloudflare account username (or <a href="https://dash.cloudflare.com/sign-up">register for an account if you're new to Cloudflare</a>); and</p>
 <p>b. Have your <a href="https://dash.cloudflare.com/profile/api-tokens">API key</a> - no need to use your Global API key! (More info: <a href="https://support.cloudflare.com/hc/en-us/articles/200167836-Managing-API-Tokens-and-Keys">API keys</a>).</p>
-<p><img alt="image" src="/docs/example4.png" /></p>
+<p><img alt="image" src="example4.png" /></p>
 <pre><code> c. Create a API key with following (3) permissions:
 
  **Zone** &gt; **Zone.Settings** &gt; **Read**  
@@ -696,7 +714,7 @@
 <p>Ensure the DNS A record(s) for the domain/zone(s) you wish to update with this script have been created (More information: <a href="https://support.cloudflare.com/hc/en-us/articles/360019093151-Managing-DNS-records-in-Cloudflare">Managing DNS records</a>).</p>
 <p>Your DNS records should appear (or already be setup as follows) in Cloudflare:</p>
 <p>(Note: Having Proxied turned on for your A records isn't necessary, but it will prevent those snooping around from easily finding out your current IP address)</p>
-<p><img alt="image" src="/docs/example1.png" /></p>
+<p><img alt="image" src="example1.png" /></p>
 <ol>
 <li><em>SSH access to your Synology device:</em></li>
 </ol>
@@ -710,7 +728,7 @@
 <p>Navigate to <strong>Control Panel &gt; Terminal &amp; SNMP &gt; Enable SSH service</strong></p>
 <p>b. For SRM users:</p>
 <p>Navigate to <strong>Control Panel &gt; Services &gt; System Services &gt; Terminal &gt; Enable SSH service</strong></p>
-<p><img alt="image" src="/docs/example2.png" /></p>
+<p><img alt="image" src="example2.png" /></p>
 <ol>
 <li><strong>Connect via SSH:</strong> Connect to your supported device via SSH and run this command:</li>
 </ol>
@@ -721,17 +739,19 @@
 <p>a. <em>For DSM Users:</em> Navigate to <strong>Control Panel &gt; External Access &gt; DDNS</strong> then add new DDNS</p>
 <p>b. <em>For SRM users:</em> Navigate to <strong>Network Centre &gt; Internet &gt; QuickConnect &amp; DDNS &gt; DDNS</strong> and press the Add button:</p>
 <p>Add/Update the DDNS settings screen as follows:</p>
-<pre><code>* Service provider: Select Cloudflare
-* Hostname: this field is not used anymore, you can put any value here
-* Username:
-  For a single domain: __mydomain.com__
-  For multiple domains: __subdomain.mydomain.com|vpn.mydomain.com__
-  (ensure each domain is separated: `|`)
-
-  __Note: there is 256 symbols limit on Hostname input__
-* Password: Your created Cloudflare API Key
-</code></pre>
-<p><img alt="image" src="/docs/example3.png" /></p>
+<ul>
+<li>Service provider: Select Cloudflare</li>
+<li>Hostname: this field is not used anymore, you can put any value here</li>
+<li>
+<p>Username:
+     For a single domain: <strong>mydomain.com</strong>
+     For multiple domains: <strong>subdomain.mydomain.com|vpn.mydomain.com</strong>
+     (ensure each domain is separated: <code>|</code>)</p>
+<p><strong>Note: there is 256 symbols limit on Hostname input</strong>
+   * Password: Your created Cloudflare API Key</p>
+</li>
+</ul>
+<p><img alt="image" src="example3.png" /></p>
 <p>Finally, press the test connection button to confirm all information is correctly entered, before pressing Ok to save and confirm your details.</p>
 <ol>
 <li>Enjoy 🍺 and <strong>don't forget to deactivate SSH (step 1) if you don't need it</strong>.</li>
@@ -810,11 +830,27 @@
 <p>Run this command:</p>
 </li>
 </ul>
-<pre><code>./KTSynologyDDNSCloudflareMultidomain.kexe &quot;&quot; &quot;domain1.com|vpn.domain2.com&quot; &quot;your-Cloudflare-token&quot; &quot;&quot; &quot;1.2.3.4 - ipv4 adress&quot;
+<pre><code>./KTSynologyDDNSCloudflareMultidomain.kexe &quot;domain1.com|vpn.domain2.com&quot; &quot;your-Cloudflare-token&quot; &quot;any&quot; &quot;1.2.3.4 - ipv4 address&quot;
 </code></pre>
 <ul>
 <li>Check output logs</li>
 </ul>
+<h2 id="output-messages">Output messages</h2>
+<p>From <code>/etc.defaults/ddns_provider.conf</code>:</p>
+<blockquote>
+<p>When you write your own module, you can use the following words to tell user what happen by print it.
+You can use your own message, but there is no multiple-language support.</p>
+<p><code>good</code> -  Update successfully.</p>
+<p><code>nochg</code> - Update successfully but the IP address have not changed.</p>
+<p><code>nohost</code> - The hostname specified does not exist in this user account.</p>
+<p><code>abuse</code> - The hostname specified is blocked for update abuse.</p>
+<p><code>notfqdn</code> - The hostname specified is not a fully-qualified domain name.</p>
+<p><code>badauth</code> - Authenticate failed.</p>
+<p><code>911</code> - There is a problem or scheduled maintenance on provider side</p>
+<p><code>badagent</code> - The user agent sent bad request(like HTTP method/parameters is not permitted)</p>
+<p><code>badresolv</code> - Failed to connect to  because failed to resolve provider address.</p>
+<p><code>badconn</code> - Failed to connect to provider because connection timeout.</p>
+</blockquote>
 <h2 id="credits">Credits</h2>
 <p><a href="https://www.mkdocs.org">MKDoc - generate documentation</a></p>
 <h2 id="support-this-project">Support this project</h2>
