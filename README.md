@@ -206,7 +206,7 @@ You can run this script directly to see output logs
 * Run this command: 
 
 ```
-./KTSynologyDDNSCloudflareMultidomain.kexe "" "domain1.com|vpn.domain2.com" "your-Cloudflare-token" "" "1.2.3.4 - ipv4 adress"
+./KTSynologyDDNSCloudflareMultidomain.kexe "domain1.com|vpn.domain2.com" "your-Cloudflare-token" "any" "1.2.3.4 - ipv4 address"
 ```
 
 * Check output logs
