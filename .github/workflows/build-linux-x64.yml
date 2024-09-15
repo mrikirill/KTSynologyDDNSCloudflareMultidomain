@@ -1,0 +1,52 @@
+name: Build and Release linuxX64
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        required: true
+        type: string
+        description: Set the version for the release in the format v1.0.0
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      discussions: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Install dependencies
+        run: sudo apt-get install libcurl4-openssl-dev # note: apt-get install libcurl4-gnutls-dev doesn't work as the ktor documentation says
+
+      - name: Build
+        run: ./gradlew build
+
+      - name: Rename artifact
+        run: mv build/bin/native/releaseExecutable/KTSynologyDDNSCloudflareMultidomain.kexe build/bin/native/releaseExecutable/KTSynologyDDNSCloudflareMultidomainLinuxX64.kexe
+
+      - name: Upload linuxX64 artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: linuxX64-kexe
+          path: build/bin/native/releaseExecutable/*.kexe
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.version }}
+          files: build/bin/native/releaseExecutable/KTSynologyDDNSCloudflareMultidomainLinuxX64.kexe
+          generate_release_notes: true
+          make_latest: true
