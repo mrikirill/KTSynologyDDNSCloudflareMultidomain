@@ -2,9 +2,11 @@
 
 # Synology Dynamic DNS Native Agent for Cloudflare (Multidomains & Subdomains)
 
-> This project is based on my PHP version of the agent: https://github.com/mrikirill/SynologyDDNSCloudflareMultidomain
->
-> [![Sponsor](https://img.shields.io/badge/sponsor-GitHub%20Sponsors-brightgreen)](https://github.com/sponsors/mrikirill)
+This project is based on my PHP version of the agent: https://github.com/mrikirill/SynologyDDNSCloudflareMultidomain
+
+Documentation website: https://mrikirill.github.io/KTSynologyDDNSCloudflareMultidomain/
+
+[![Sponsor](https://img.shields.io/badge/sponsor-GitHub%20Sponsors-brightgreen)](https://github.com/sponsors/mrikirill)
 
 ## Why this project?
 
