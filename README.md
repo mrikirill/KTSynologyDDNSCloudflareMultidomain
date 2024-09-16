@@ -10,7 +10,7 @@ Documentation website: https://mrikirill.github.io/KTSynologyDDNSCloudflareMulti
 
 ## Why this project?
 
-The idea of this project is to provide a native agent for [Synology DSM](https://www.synology.com/en-global/dsm) and [SRM](https://www.synology.com/en-global/srm) devices ⚠️(read [here](#srm-support)) to update Cloudflare DNS records without requiring any dependencies.
+The idea of this project is to provide a native agent for [Synology DSM](https://www.synology.com/en-global/dsm) and [SRM](https://www.synology.com/en-global/srm) devices ([read SRM support first](#srm-support)) to update Cloudflare DNS records without requiring any dependencies.
 
 This project is based on [the original PHP version of the agent](https://github.com/mrikirill/SynologyDDNSCloudflareMultidomain) but is written in [Kotlin Native](https://kotlinlang.org/docs/native-overview.html) and does not require the JVM. The agent is a standalone executable file that doesn't rely on system dependencies, which is the main difference from the PHP version. Additionally, it includes unit tests covering the main logic of the agent.
 
@@ -41,7 +41,7 @@ This project is based on [the original PHP version of the agent](https://github.
 
 * Works as a standalone executable file.
 * Functionality remains consistent with the [PHP version of the agent](https://github.com/mrikirill/SynologyDDNSCloudflareMultidomain).
-* Designed for Synology DSM and ⚠️[Synology SRM devices](#srm-support) to integrate Cloudflare support into `Network Centre > Dynamic DNS (DDNS)`.
+* Designed for Synology DSM and [Synology SRM devices](#srm-support) to integrate Cloudflare support into `Network Centre > Dynamic DNS (DDNS)`.
 * Supports single domains, multidomains, subdomains, regional domains, or any combination etc (e.g., dev.my.domain.com.au, domain.com.uk, etc.).
 * Simple installation process.
 * Based on [CloudFlare API v4](https://developers.cloudflare.com/api)
