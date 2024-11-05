@@ -1,0 +1,28 @@
+name: Build
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      discussions: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build linuxX64 and linuxArm64 artifacts
+        env:
+          DOCKER_CLI_EXPERIMENTAL: enabled
+        run: |
+          docker buildx build --platform linux/amd64,linux/arm64 -f Dockerfile --output type=local,dest=./build_output .

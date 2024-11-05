@@ -1,0 +1,50 @@
+name: Build and Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        required: true
+        type: string
+        description: Set the version for the release in the format v1.0.0
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      discussions: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build linuxX64 and linuxArm64 artifacts
+        env:
+          DOCKER_CLI_EXPERIMENTAL: enabled
+        run: |
+          docker buildx build --platform linux/amd64,linux/arm64 -f Dockerfile --output type=local,dest=./build_output .
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: kexe-artifacts
+          path: |
+            build_output/KTSynologyDDNSCloudflareMultidomainLinuxX64.kexe
+            build_output/KTSynologyDDNSCloudflareMultidomainLinuxArm64.kexe
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.version }}
+          files: |
+            build_output/KTSynologyDDNSCloudflareMultidomainLinuxX64.kexe
+            build_output/KTSynologyDDNSCloudflareMultidomainLinuxArm64.kexe
+          generate_release_notes: true
+          make_latest: true
