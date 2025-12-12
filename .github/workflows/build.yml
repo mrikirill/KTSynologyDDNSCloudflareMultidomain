@@ -43,8 +43,16 @@ jobs:
           
           # Update sources to look for arm64 in ports.ubuntu.com
           # 1. Restrict existing sources to amd64 to prevent 404 errors for arm64
-          sudo sed -i 's/^deb http/deb [arch=amd64] http/g' /etc/apt/sources.list
-          sudo sed -i 's/^deb mirror/deb [arch=amd64] mirror/g' /etc/apt/sources.list
+          
+          # Handle classic sources.list
+          if [ -f /etc/apt/sources.list ]; then
+              sudo sed -i 's/^deb /deb [arch=amd64] /g' /etc/apt/sources.list
+          fi
+          
+          # Handle DEB822 format (Ubuntu 24.04+)
+          if [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then
+              sudo sed -i 's/^Types: deb$/Types: deb\nArchitectures: amd64/' /etc/apt/sources.list.d/ubuntu.sources
+          fi
           
           # 2. Add the arm64 ports repositories
           echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -cs) main restricted universe multiverse" | sudo tee /etc/apt/sources.list.d/arm64.list
