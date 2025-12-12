@@ -24,5 +24,6 @@ object SynologyOutput {
     const val DDNS_FAILED = "911"            // There is a problem or scheduled maintenance on provider side
     const val BAD_HTTP_REQUEST = "badagent"  // HTTP method/parameters is not permitted
     const val BAD_PARAMS = "badparam"        // Bad params
+    const val BAD_CONN = "badconn"           // Failed to connect to provider because connection timeout
     const val UNKNOWN_ERROR = "911"          // Unknown error
 }

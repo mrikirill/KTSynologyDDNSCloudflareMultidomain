@@ -35,10 +35,11 @@ sudo chmod 755 "$TARGET_FILE"
 CONF_FILE="/etc.defaults/ddns_provider.conf"
 STRING_TO_ADD="[Cloudflare]\n  modulepath=/usr/syno/bin/ddns/KTSynologyDDNSCloudflareMultidomain.kexe\n  queryurl=https://www.cloudflare.com/"
 
-if ! grep -q "\[Cloudflare\]" "$CONF_FILE"; then
-    echo -e "$STRING_TO_ADD" | sudo tee -a "$CONF_FILE" > /dev/null
-else
-    echo "Cloudflare configuration already exists."
+if grep -q "\[Cloudflare\]" "$CONF_FILE"; then
+    echo "Removing existing Cloudflare configuration..."
+    sudo sed -i '/^\[Cloudflare\]/,/^\[/ { /^\[Cloudflare\]/d; /^\[/!d; }' "$CONF_FILE"
 fi
+
+echo -e "$STRING_TO_ADD" | sudo tee -a "$CONF_FILE" > /dev/null
 
 echo "Installation complete for $SYSTEM."
