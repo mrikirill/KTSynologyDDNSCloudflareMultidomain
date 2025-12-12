@@ -27,9 +27,9 @@ This project is based on [the original PHP version of the agent](https://github.
 * [Before you start](#before-you-start)
 * [How to install](#how-to-install)
 * [Troubleshooting and known issues](#troubleshooting-and-known-issues)
-  + [CloudFlare API free domains limitation](#cloudflare-api-free-domains-limitation)
+  + [Cloudflare API free domains limitation](#cloudflare-api-free-domains-limitation)
   + [Connection test failed or error returned](#connection-test-failed-or-error-returned)
-  + [Cloudflare no longer listed as a DDNS provider after a DSM update](#cloudflare-no-longer-listed-as-a-ddns-provider-after-dsm-or-srm-updates)
+  + [Cloudflare no longer listed as a DDNS provider after DSM or SRM updates](#cloudflare-no-longer-listed-as-a-ddns-provider-after-dsm-or-srm-updates)
 * [Default Cloudflare ports](#default-cloudflare-ports)
 * [Debug script](#debug)
 * [Output messages](#output-messages)
@@ -49,7 +49,7 @@ This project is based on [the original PHP version of the agent](https://github.
 * Compatible with both IPv4 and IPv6 dual stack.
 
 ## SRM Support
-[SRM-based devices](#https://www.synology.com/en-global/products/routers) use the Linux Arm64 architecture. The agent has a build target for Linux Arm64 and should work on SRM devices. However, it needs to be built locally and tested on SRM devices. Currently, it has not been tested on SRM devices, and there is no established build process for Linux Arm64.
+[SRM-based devices](https://www.synology.com/en-global/products/routers) use the Linux ARM64 architecture. The agent has a build target for Linux ARM64 and works on SRM devices. You can download the latest release for Linux ARM64 from the [releases page](https://github.com/mrikirill/KTSynologyDDNSCloudflareMultidomain/releases).
 
 ## Build the agent locally
 
@@ -63,7 +63,17 @@ This project is based on [the original PHP version of the agent](https://github.
 ./gradlew build
 ```
 
-Note: cause the agent includes the Ktor Client Curl Engine it requires extra steps documented [here](https://ktor.io/docs/client-engines.html#curl)
+**Note:** because the agent includes the Ktor Client Curl Engine it requires extra steps documented [here](https://ktor.io/docs/client-engines.html#curl).
+
+If you are on macOS or Windows, you can use Docker to build the Linux binaries:
+
+```bash
+# For Linux X64 (DSM)
+docker buildx build --platform linux/amd64 -t ktsynology-linux-x64 .
+
+# For Linux ARM64 (SRM)
+docker buildx build --platform linux/arm64 -t ktsynology-linux-arm64 .
+```
 
 ## Before you start
 
@@ -84,7 +94,7 @@ Before starting the installation process, make sure you have (and know) the foll
 	 **Zone** > **Zone** > **Read**  
 	 **Zone** > **DNS** > **Edit**  
 
-	 The affected zone ressouces have to be (at least):
+	 The affected zone resources have to be (at least):
 
 	**Include** > **All zones from an account** > `<domain>`  
 
@@ -101,7 +111,7 @@ Before starting the installation process, make sure you have (and know) the foll
 3. *SSH access to your Synology device:*
 
 If you haven't setup this access, see the following Synology Knowledge Base article:
-[How can I sign in to DSM/SRM with root privilege via SSH?[(https://kb.synology.com/en-id/DSM/tutorial/How_to_login_to_DSM_with_root_permission_via_SSH_Telnet)
+[How can I sign in to DSM/SRM with root privilege via SSH?](https://kb.synology.com/en-id/DSM/tutorial/How_to_login_to_DSM_with_root_permission_via_SSH_Telnet)
 
 
 ## How to install
@@ -140,7 +150,7 @@ For a single domain: __mydomain.com__
 For multiple domains: __subdomain.mydomain.com|vpn.mydomain.com__
 	  (ensure each domain is separated: `|`)
     
-        __Note: there is 256 symbols limit on Hostname input__
+        __Note: there is a 256-character limit on the Hostname input__
 	* Password: Your created Cloudflare API Key
 
 	![image](/docs/example3.png)
@@ -151,9 +161,9 @@ For multiple domains: __subdomain.mydomain.com|vpn.mydomain.com__
 
 ## Troubleshooting and known issues
 
-### CloudFlare API free domains limitation
+### Cloudflare API free domains limitation
 
-CloudFlare API doesn't support domains with a .cf, .ga, .gq, .ml, or .tk TLD (top-level domain)
+Cloudflare API doesn't support domains with a .cf, .ga, .gq, .ml, or .tk TLD (top-level domain)
 
 For more details read here: https://github.com/mrikirill/SynologyDDNSCloudflareMultidomain/issues/28 and https://community.cloudflare.com/t/unable-to-update-ddns-using-api-for-some-tlds/167228/61
 
@@ -179,7 +189,7 @@ This will manifest as either 1020 error; or the update attempt not showing in yo
 
 That generally means you may not have entered something correctly in the DDNS screen for your domain(s).
 
-Revisit [Before you begin](#before-you-begin) to ensure you have all the right information, then go back to Step 4 in [How to install](#how-to-install) to make sure everything is correctly entered.
+Revisit [Before you start](#before-you-start) to ensure you have all the right information, then go back to Step 4 in [How to install](#how-to-install) to make sure everything is correctly entered.
 
 **Handy hint:** You can also check your Cloudflare Audit logs to see what - if anything - has made it there with your API key (More information: [Understanding Cloudflare Audit Logs](https://support.cloudflare.com/hc/en-us/articles/115002833612-Understanding-Cloudflare-Audit-Logs)). Updates using the API will appear in the Audit logs as a Rec Set action.
 

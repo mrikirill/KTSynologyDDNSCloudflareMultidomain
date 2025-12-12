@@ -4,8 +4,6 @@
 ARCH=$(uname -m)
 if [[ "$ARCH" == "aarch64" ]]; then
     SYSTEM="LinuxArm64"
-    echo "Installer doesn't support LinuxArm64. Please make the build manually."
-    exit 1
 elif [[ "$ARCH" == "x86_64" ]]; then
     SYSTEM="LinuxX64"
 else

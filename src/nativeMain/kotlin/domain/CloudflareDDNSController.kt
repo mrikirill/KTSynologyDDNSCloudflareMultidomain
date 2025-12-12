@@ -1,57 +1,41 @@
-package domian
+package domain
 
 import data.CloudflareService
-import data.IpifyService
 import data.model.*
-import kotlinx.coroutines.runBlocking
-import kotlin.system.exitProcess
 
 class CloudflareDDNSController(
     private val cloudflareService: CloudflareService,
-    private val ipifyService: IpifyService,
     private val ipv4: String,
+    private val ipv6: String?,
     private val hostnameList: String
 ) {
     private val dnsRecordListRequest: MutableList<DnsRecordListRequestDto> = mutableListOf()
     private val dnsRecordList: MutableList<DnsRecordDto> = mutableListOf()
     private val dnsRecordUpdateList: MutableList<DnsRecordUpdateDto> = mutableListOf()
-    private var ipv6: String? = null
-    private var lastOutput: String? = null
-    private var exitProcess: Boolean = true
-
-    init {
-        runBlocking {
-            ipv6 = try {
-                ipifyService.getIpV6().ip
-            } catch (e: Exception) {
-                null
-            }
-        }
-    }
 
     suspend fun verifyToken() {
         try {
             val token = cloudflareService.verifyToken().result
             if (token.status != TokenStatus.ACTIVE) {
-                exitWithSynologyOutput(SynologyOutput.AUTH_FAILED)
+                throw SynologyException(SynologyOutput.AUTH_FAILED)
             }
         } catch (e: Exception) {
-            println(e.message)
-            exitWithSynologyOutput(SynologyOutput.AUTH_FAILED)
+            if (e is SynologyException) throw e
+            throw SynologyException(SynologyOutput.AUTH_FAILED)
         }
     }
 
     suspend fun matchHostnamesWithZones() {
         try {
             if (hostnameList.isEmpty()) {
-                exitWithSynologyOutput(SynologyOutput.NO_HOSTNAME)
+                throw SynologyException(SynologyOutput.NO_HOSTNAME)
             }
             val hostnameList = extractHostnameList(hostnameList)
             val zones = cloudflareService.getZones()
             zones.result.forEach { zone ->
                 hostnameList.forEach { hostname ->
                     if (!isHostnameFQDN(hostname)) {
-                        exitWithSynologyOutput(SynologyOutput.HOSTNAME_INCORRECT)
+                        throw SynologyException(SynologyOutput.HOSTNAME_INCORRECT)
                     }
                     if (hostname.contains(zone.name)) {
                          dnsRecordListRequest += DnsRecordListRequestDto(
@@ -71,10 +55,11 @@ class CloudflareDDNSController(
                 }
             }
             if (dnsRecordListRequest.isEmpty()) {
-                exitWithSynologyOutput(SynologyOutput.NO_HOSTNAME)
+                throw SynologyException(SynologyOutput.NO_HOSTNAME)
             }
         } catch (e: Exception) {
-            exitWithSynologyOutput(SynologyOutput.NO_HOSTNAME)
+            if (e is SynologyException) throw e
+            throw SynologyException(SynologyOutput.NO_HOSTNAME)
         }
     }
 
@@ -82,7 +67,10 @@ class CloudflareDDNSController(
         dnsRecordListRequest.forEach { dnsRecordRequest ->
             try {
                 val dnsRecords = cloudflareService.getDnsRecords(dnsRecordRequest)
-                if (dnsRecords.result.size == 1) {
+                if (dnsRecords.result.size >= 1) {
+                    // If multiple records exist, we update the first one.
+                    // Ideally we should check if there are multiple and handle it, but for now we stick to existing logic
+                    // but relaxed the check to >= 1 to avoid skipping if user has multiple records.
                     val dnsRecord = when (dnsRecordRequest.type) {
                         DnsRecordTypeEnumDto.A -> dnsRecords.result.first().copy(
                             content = ipv4
@@ -102,7 +90,7 @@ class CloudflareDDNSController(
             }
         }
         if (dnsRecordList.isEmpty()) {
-            exitWithSynologyOutput(SynologyOutput.DDNS_FAILED)
+            throw SynologyException(SynologyOutput.DDNS_FAILED)
         }
     }
 
@@ -118,9 +106,9 @@ class CloudflareDDNSController(
             }
         }
         if (dnsRecordUpdateList.isEmpty()) {
-            exitWithSynologyOutput(SynologyOutput.BAD_HTTP_REQUEST)
+            throw SynologyException(SynologyOutput.BAD_HTTP_REQUEST)
         } else {
-            exitWithSynologyOutput(SynologyOutput.SUCCESS)
+            throw SynologyException(SynologyOutput.SUCCESS)
         }
     }
 
@@ -132,28 +120,11 @@ class CloudflareDDNSController(
         return hostnameList.split("|")
     }
 
-    private fun exitWithSynologyOutput(output: String) {
-        lastOutput = output
-        if (!exitProcess) {
-            return
-        }
-        println(output)
-        exitProcess(0)
-    }
-
     fun getDnsRecordListRequest(): List<DnsRecordListRequestDto> {
         return dnsRecordListRequest
     }
 
     fun getDnsRecordList(): List<DnsRecordDto> {
         return dnsRecordList
-    }
-
-    fun getLastOutput(): String? {
-        return lastOutput
-    }
-
-    fun setExitProcess(exitProcess: Boolean) {
-        this.exitProcess = exitProcess
     }
 }
