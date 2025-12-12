@@ -8,16 +8,6 @@ on:
         type: string
         description: Set the version for the release in the format v1.0.0
 
-name: Build and Release
-
-on:
-  workflow_dispatch:
-    inputs:
-      version:
-        required: true
-        type: string
-        description: Set the version for the release in the format v1.0.0
-
 jobs:
   build-linux-x64:
     runs-on: ubuntu-latest
