@@ -36,15 +36,15 @@ jobs:
         with:
           name: kexe-artifacts
           path: |
-            build_output/KTSynologyDDNSCloudflareMultidomainLinuxX64.kexe
-            build_output/KTSynologyDDNSCloudflareMultidomainLinuxArm64.kexe
+            build_output/linux_amd64/KTSynologyDDNSCloudflareMultidomainLinuxX64.kexe
+            build_output/linux_arm64/KTSynologyDDNSCloudflareMultidomainLinuxArm64.kexe
 
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.version }}
           files: |
-            build_output/KTSynologyDDNSCloudflareMultidomainLinuxX64.kexe
-            build_output/KTSynologyDDNSCloudflareMultidomainLinuxArm64.kexe
+            build_output/linux_amd64/KTSynologyDDNSCloudflareMultidomainLinuxX64.kexe
+            build_output/linux_arm64/KTSynologyDDNSCloudflareMultidomainLinuxArm64.kexe
           generate_release_notes: true
           make_latest: true

@@ -1,4 +1,4 @@
-package domian
+package domain
 
 data class SynologyInput (
     val cloudflareApiKey: String,

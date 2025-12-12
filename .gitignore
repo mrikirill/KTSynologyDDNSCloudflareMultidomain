@@ -3,3 +3,10 @@ site/
 .gradle/
 .kotlin/
 build/
+
+# macOS
+.DS_Store
+
+# JVM crash logs and heap dumps
+hs_err_pid*
+java_pid*

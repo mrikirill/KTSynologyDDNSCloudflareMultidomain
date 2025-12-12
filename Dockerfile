@@ -1,5 +1,6 @@
-# Use a base image with Gradle 8.4 and JDK 21
-FROM gradle:8.4-jdk21 as builder
+# Use a base image with Gradle 8.11.1 and JDK 21
+FROM gradle:8.11.1-jdk21 as builder
+ARG TARGETARCH
 
 # Set the working directory inside the container
 WORKDIR /workspace
@@ -16,10 +17,15 @@ RUN apt-get update && apt-get install -y libcurl4-openssl-dev
 # Create output directory for artifacts
 RUN mkdir -p /workspace/build_output
 
-# Build for linux64 and rename the artifact
-RUN ./gradlew build -PtargetPlatform=linuxX64 && \
-    mv build/bin/native/releaseExecutable/KTSynologyDDNSCloudflareMultidomain.kexe /workspace/build_output/KTSynologyDDNSCloudflareMultidomainLinuxX64.kexe
+# Build based on the target architecture
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+        ./gradlew build -PtargetPlatform=linuxX64 && \
+        mv build/bin/native/releaseExecutable/KTSynologyDDNSCloudflareMultidomain.kexe /workspace/build_output/KTSynologyDDNSCloudflareMultidomainLinuxX64.kexe; \
+    elif [ "$TARGETARCH" = "arm64" ]; then \
+        ./gradlew build -PtargetPlatform=linuxArm64 && \
+        mv build/bin/native/releaseExecutable/KTSynologyDDNSCloudflareMultidomain.kexe /workspace/build_output/KTSynologyDDNSCloudflareMultidomainLinuxArm64.kexe; \
+    fi
 
-# Build for linuxArm64 and rename the artifact
-RUN ./gradlew build -PtargetPlatform=linuxArm64 && \
-    mv build/bin/native/releaseExecutable/KTSynologyDDNSCloudflareMultidomain.kexe /workspace/build_output/KTSynologyDDNSCloudflareMultidomainLinuxArm64.kexe
+# Export stage
+FROM scratch
+COPY --from=builder /workspace/build_output/ /

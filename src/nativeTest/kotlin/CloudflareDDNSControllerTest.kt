@@ -1,8 +1,9 @@
 import data.CloudflareServiceImpl
 import data.IpifyServiceImpl
 import data.model.DnsRecordTypeEnumDto
-import domian.CloudflareDDNSController
-import domian.SynologyOutput
+import domain.CloudflareDDNSController
+import domain.SynologyException
+import domain.SynologyOutput
 import io.ktor.client.*
 import io.ktor.client.engine.mock.*
 import io.ktor.client.plugins.contentnegotiation.*
@@ -12,6 +13,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class CloudflareDDNSControllerTest {
     private val mockEngine = MockEngine { request ->
@@ -139,6 +141,42 @@ class CloudflareDDNSControllerTest {
                 status = HttpStatusCode.OK,
                 headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
             )
+            "/client/v4/zones/mock-zone-id/dns_records?type=A&name=fail.osome.dev" -> respond(
+                content = """
+                    {
+                    "result": [
+                        {
+                            "id": "fail-dns-record-id",
+                            "zone_id": "mock-zone-id",
+                            "zone_name": "osome.dev",
+                            "name": "fail.osome.dev",
+                            "type": "A",
+                            "content": "1.2.3.4",
+                            "proxiable": true,
+                            "proxied": true,
+                            "ttl": 1,
+                            "meta": {},
+                            "comment": null,
+                            "tags": [],
+                            "created_on": "2024-03-15T02:23:16.702904Z",
+                            "modified_on": "2024-03-15T02:23:16.702904Z"
+                        }
+                    ],
+                    "success": true,
+                    "errors": [],
+                    "messages": [],
+                    "result_info": {
+                        "page": 1,
+                        "per_page": 100,
+                        "count": 1,
+                        "total_count": 1,
+                        "total_pages": 1
+                    }
+                }
+                """.trimIndent(),
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            )
             "/client/v4/zones/mock-zone-id/dns_records?type=AAAA&name=osome.dev" -> respond(
                 content = """
                     {
@@ -209,21 +247,19 @@ class CloudflareDDNSControllerTest {
                 status = HttpStatusCode.OK,
                 headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
             )
-            else -> respondError(HttpStatusCode.InternalServerError)
-        }
-    }
-
-    private val ipifyMockEngineSuccess = MockEngine { request ->
-        when (request.url.fullPath) {
-            "/?format=json" -> respond(
+            "/client/v4/zones/mock-zone-id/dns_records/fail-dns-record-id" -> respond(
                 content = """
-                    {"ip":"2a00:1450:400f:80d::200e"}
+                    {
+                      "errors": [{"code": 1000, "message": "Update failed"}],
+                      "messages": [],
+                      "success": false,
+                      "result": null
+                    }
                 """.trimIndent(),
                 status = HttpStatusCode.OK,
                 headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
             )
-
-            else -> respondBadRequest()
+            else -> respondError(HttpStatusCode.InternalServerError)
         }
     }
 
@@ -245,34 +281,25 @@ class CloudflareDDNSControllerTest {
         "cloudflareApiKeyFailed"
     )
 
-    private val ipifyServiceFailed = IpifyServiceImpl(client)
-
-    private val ipifyServiceSuccess = IpifyServiceImpl(HttpClient(ipifyMockEngineSuccess) {
-        install(ContentNegotiation) {
-            json(Json {
-                ignoreUnknownKeys = true
-            })
-        }
-    })
-
     @Test
     fun `GIVEN CloudflareDDNSController with incorrect Cloudflare token WHEN the request is failed AND system exit and SynologyOutput AUTH_FAILED`() = runBlocking {
         val controller = CloudflareDDNSController(
             cloudflareService = cloudflareServiceFailedToken,
-            ipifyService = ipifyServiceFailed,
+            ipv6 = null,
             hostnameList = "example.com",
             ipv4 = "1.2.3.4"
         )
-        controller.setExitProcess(false)
-        controller.verifyToken()
-        assertEquals(SynologyOutput.AUTH_FAILED, controller.getLastOutput())
+        val exception = assertFailsWith<SynologyException> {
+            controller.verifyToken()
+        }
+        assertEquals(SynologyOutput.AUTH_FAILED, exception.message)
     }
 
     @Test
     fun `GIVEN CloudflareDDNSController with 4 domains without ipv6 WHEN the request is successful THEN return matched DNS record list with hostnameList`() = runBlocking {
         val controller = CloudflareDDNSController(
             cloudflareService = cloudflareService,
-            ipifyService = ipifyServiceFailed,
+            ipv6 = null,
             hostnameList = "osome.dev|api.osome.dev|*.osome.dev|example.com",
             ipv4 = "1.2.3.4"
         )
@@ -285,7 +312,7 @@ class CloudflareDDNSControllerTest {
     fun `GIVEN CloudflareDDNSController with 4 domains with ipv6 WHEN the request is successful THEN return matched DNS record list with hostnameList`() = runBlocking {
         val controller = CloudflareDDNSController(
             cloudflareService = cloudflareService,
-            ipifyService = ipifyServiceSuccess,
+            ipv6 = "2a00:1450:400f:80d::200e",
             hostnameList = "osome.dev|api.osome.dev|*.osome.dev|example.com",
             ipv4 = "1.2.3.4"
         )
@@ -298,7 +325,7 @@ class CloudflareDDNSControllerTest {
     fun `GIVEN CloudflareDDNSController with 4 domains without ipv6 WHEN only 1 dns record is matched THEN return DNS record list with 1 record`() = runBlocking {
         val controller = CloudflareDDNSController(
             cloudflareService = cloudflareService,
-            ipifyService = ipifyServiceFailed,
+            ipv6 = null,
             hostnameList = "osome.dev|api.osome.dev|*.osome.dev|example.com",
             ipv4 = "1.2.3.4"
         )
@@ -312,22 +339,23 @@ class CloudflareDDNSControllerTest {
     fun `GIVEN CloudflareDDNSController with 3 domains without ipv6 WHEN 0 dns record is matched THEN exit with SynologyOutput DDNS_FAILED`() = runBlocking {
         val controller = CloudflareDDNSController(
             cloudflareService = cloudflareService,
-            ipifyService = ipifyServiceFailed,
+            ipv6 = null,
             hostnameList = "api.osome.dev|*.osome.dev|example.com",
             ipv4 = "1.2.3.4"
         )
-        controller.setExitProcess(false)
         controller.verifyToken()
         controller.matchHostnamesWithZones()
-        controller.setDnsRecords()
-        assertEquals(SynologyOutput.DDNS_FAILED, controller.getLastOutput())
+        val exception = assertFailsWith<SynologyException> {
+            controller.setDnsRecords()
+        }
+        assertEquals(SynologyOutput.DDNS_FAILED, exception.message)
     }
 
     @Test
     fun `GIVEN CloudflareDDNSController with 4 domains with ipv6 WHEN only 1 dns record is matched THEN return DNS record list with 2 records`() = runBlocking {
         val controller = CloudflareDDNSController(
             cloudflareService = cloudflareService,
-            ipifyService = ipifyServiceSuccess,
+            ipv6 = "2a00:1450:400f:80d::200e",
             hostnameList = "osome.dev|api.osome.dev|*.osome.dev|example.com",
             ipv4 = "1.2.3.4"
         )
@@ -346,15 +374,93 @@ class CloudflareDDNSControllerTest {
     fun `GIVEN CloudflareDDNSController with 4 domains with ipv6 WHEN only 1 dns record is matched THEN update 1 dns record and exit with SynologyOutput SUCCESS`() = runBlocking {
         val controller = CloudflareDDNSController(
             cloudflareService = cloudflareService,
-            ipifyService = ipifyServiceSuccess,
+            ipv6 = "2a00:1450:400f:80d::200e",
             hostnameList = "osome.dev|api.osome.dev|*.osome.dev|example.com",
             ipv4 = "1.2.3.4"
         )
-        controller.setExitProcess(false)
         controller.verifyToken()
         controller.matchHostnamesWithZones()
         controller.setDnsRecords()
-        controller.updateDnsRecords()
-        assertEquals(SynologyOutput.SUCCESS, controller.getLastOutput())
+        val exception = assertFailsWith<SynologyException> {
+            controller.updateDnsRecords()
+        }
+        assertEquals(SynologyOutput.SUCCESS, exception.message)
+    }
+
+    @Test
+    fun `GIVEN CloudflareDDNSController with empty hostname list WHEN matchHostnamesWithZones THEN throw SynologyException NO_HOSTNAME`() = runBlocking {
+        val controller = CloudflareDDNSController(
+            cloudflareService = cloudflareService,
+            ipv6 = null,
+            hostnameList = "",
+            ipv4 = "1.2.3.4"
+        )
+        controller.verifyToken()
+        val exception = assertFailsWith<SynologyException> {
+            controller.matchHostnamesWithZones()
+        }
+        assertEquals(SynologyOutput.NO_HOSTNAME, exception.message)
+    }
+
+    @Test
+    fun `GIVEN CloudflareDDNSController with invalid hostname WHEN matchHostnamesWithZones THEN throw SynologyException HOSTNAME_INCORRECT`() = runBlocking {
+        val controller = CloudflareDDNSController(
+            cloudflareService = cloudflareService,
+            ipv6 = null,
+            hostnameList = "invalidhostname",
+            ipv4 = "1.2.3.4"
+        )
+        controller.verifyToken()
+        val exception = assertFailsWith<SynologyException> {
+            controller.matchHostnamesWithZones()
+        }
+        assertEquals(SynologyOutput.HOSTNAME_INCORRECT, exception.message)
+    }
+
+    @Test
+    fun `GIVEN CloudflareDDNSController with non-matching hostname WHEN matchHostnamesWithZones THEN throw SynologyException NO_HOSTNAME`() = runBlocking {
+        val controller = CloudflareDDNSController(
+            cloudflareService = cloudflareService,
+            ipv6 = null,
+            hostnameList = "nomatch.com",
+            ipv4 = "1.2.3.4"
+        )
+        controller.verifyToken()
+        val exception = assertFailsWith<SynologyException> {
+            controller.matchHostnamesWithZones()
+        }
+        assertEquals(SynologyOutput.NO_HOSTNAME, exception.message)
+    }
+
+    @Test
+    fun `GIVEN CloudflareDDNSController with failing DNS record update WHEN updateDnsRecords THEN throw SynologyException BAD_HTTP_REQUEST`() = runBlocking {
+        val controller = CloudflareDDNSController(
+            cloudflareService = cloudflareService,
+            ipv6 = null,
+            hostnameList = "fail.osome.dev",
+            ipv4 = "1.2.3.4"
+        )
+        controller.verifyToken()
+        controller.matchHostnamesWithZones()
+        controller.setDnsRecords()
+        val exception = assertFailsWith<SynologyException> {
+            controller.updateDnsRecords()
+        }
+        assertEquals(SynologyOutput.BAD_HTTP_REQUEST, exception.message)
+    }
+
+    @Test
+    fun `GIVEN CloudflareDDNSController with mixed matching and non-matching hostnames WHEN matchHostnamesWithZones THEN return matched DNS record list for matching only`() = runBlocking {
+        val controller = CloudflareDDNSController(
+            cloudflareService = cloudflareService,
+            ipv6 = null,
+            hostnameList = "osome.dev|nomatch.com",
+            ipv4 = "1.2.3.4"
+        )
+        controller.verifyToken()
+        controller.matchHostnamesWithZones()
+        // Should match osome.dev (1 record) and ignore nomatch.com
+        assertEquals(1, controller.getDnsRecordListRequest().size)
+        assertEquals("osome.dev", controller.getDnsRecordListRequest().first().name)
     }
 }

@@ -1,9 +1,10 @@
 import config.Config
 import data.CloudflareServiceImpl
 import data.IpifyServiceImpl
-import domian.CloudflareDDNSController
-import domian.SynologyInput
-import domian.SynologyOutput
+import domain.CloudflareDDNSController
+import domain.SynologyException
+import domain.SynologyInput
+import domain.SynologyOutput
 import io.ktor.client.*
 import io.ktor.client.engine.curl.*
 import io.ktor.client.plugins.*
@@ -72,19 +73,35 @@ fun main(args: Array<String>) = runBlocking {
         }
     }
 
-    val controller = CloudflareDDNSController(
-        cloudflareService = CloudflareServiceImpl(
-            httpClient = httpClient,
-            cloudflareApiKey = synologyInput.cloudflareApiKey
-        ),
-        ipifyService = IpifyServiceImpl(
-            httpClient = httpClient
-        ),
-        ipv4 = synologyInput.ip,
-        hostnameList = synologyInput.hostnameList
-    )
-    controller.verifyToken()
-    controller.matchHostnamesWithZones()
-    controller.setDnsRecords()
-    controller.updateDnsRecords()
+    try {
+        val ipifyService = IpifyServiceImpl(httpClient)
+        val ipv6 = try {
+            ipifyService.getIpV6().ip
+        } catch (e: Exception) {
+            null
+        }
+
+        val controller = CloudflareDDNSController(
+            cloudflareService = CloudflareServiceImpl(
+                httpClient = httpClient,
+                cloudflareApiKey = synologyInput.cloudflareApiKey
+            ),
+            ipv4 = synologyInput.ip,
+            ipv6 = ipv6,
+            hostnameList = synologyInput.hostnameList
+        )
+
+        try {
+            controller.verifyToken()
+            controller.matchHostnamesWithZones()
+            controller.setDnsRecords()
+            controller.updateDnsRecords()
+        } catch (e: SynologyException) {
+            println(e.message)
+        } catch (e: Exception) {
+            println(SynologyOutput.UNKNOWN_ERROR)
+        }
+    } finally {
+        httpClient.close()
+    }
 }
