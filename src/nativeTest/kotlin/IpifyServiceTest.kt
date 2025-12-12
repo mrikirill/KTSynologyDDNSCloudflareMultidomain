@@ -11,16 +11,24 @@ import kotlin.test.assertEquals
 
 class IpifyServiceTest {
     private val mockEngine = MockEngine { request ->
-        when (request.url.fullPath) {
-            "/?format=json" -> respond(
+        if (request.url.host == "api6.ipify.org" && request.url.fullPath == "/?format=json") {
+            respond(
                 content = """
                     {"ip":"2a00:1450:400f:80d::200e"}
                 """.trimIndent(),
                 status = HttpStatusCode.OK,
                 headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
             )
-
-            else -> respondBadRequest()
+        } else if (request.url.host == "api.ipify.org" && request.url.fullPath == "/?format=json") {
+            respond(
+                content = """
+                    {"ip":"1.2.3.4"}
+                """.trimIndent(),
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            )
+        } else {
+            respondBadRequest()
         }
     }
 
@@ -38,5 +46,11 @@ class IpifyServiceTest {
     fun `GIVEN a request to get IPv6 from Ipify service WHEN the request is successful THEN return the IPv6`() = runBlocking {
         val response = ipifyService.getIpV6()
         assertEquals("2a00:1450:400f:80d::200e", response.ip)
+    }
+
+    @Test
+    fun `GIVEN a request to get IPv4 from Ipify service WHEN the request is successful THEN return the IPv4`() = runBlocking {
+        val response = ipifyService.getIpV4()
+        assertEquals("1.2.3.4", response.ip)
     }
 }

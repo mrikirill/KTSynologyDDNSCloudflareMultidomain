@@ -46,17 +46,6 @@ import kotlin.system.exitProcess
  */
 
 fun main(args: Array<String>) = runBlocking {
-    if (args.size != 4) {
-        println(SynologyOutput.BAD_PARAMS)
-        exitProcess(0)
-    }
-
-    val synologyInput = SynologyInput(
-        cloudflareApiKey = args[1],
-        hostnameList = args[0], // we use the username field to pass the hostname list
-        ip = args[3], // synology passes the ipv4 address
-    )
-
     val httpClient = HttpClient(Curl) {
         expectSuccess = true
         headers {
@@ -75,6 +64,29 @@ fun main(args: Array<String>) = runBlocking {
 
     try {
         val ipifyService = IpifyServiceImpl(httpClient)
+
+        val synologyInput = when (args.size) {
+            4 -> SynologyInput(
+                cloudflareApiKey = args[1],
+                hostnameList = args[0], // we use the username field to pass the hostname list
+                ip = args[3], // synology passes the ipv4 address
+            )
+            2 -> SynologyInput(
+                cloudflareApiKey = args[1],
+                hostnameList = args[0],
+                ip = try {
+                    ipifyService.getIpV4().ip
+                } catch (e: Exception) {
+                    println(SynologyOutput.BAD_CONN)
+                    exitProcess(0)
+                }
+            )
+            else -> {
+                println(SynologyOutput.BAD_PARAMS)
+                exitProcess(0)
+            }
+        }
+
         val ipv6 = try {
             ipifyService.getIpV6().ip
         } catch (e: Exception) {

@@ -4,12 +4,6 @@ on:
   pull_request:
   workflow_dispatch:
 
-name: Build
-
-on:
-  pull_request:
-  workflow_dispatch:
-
 jobs:
   build-linux-x64:
     runs-on: ubuntu-latest
@@ -47,22 +41,21 @@ jobs:
         run: |
           sudo dpkg --add-architecture arm64
           
-          # Update sources to look for arm64 in ports.ubuntu.com
-          # 1. Restrict existing sources to amd64 to prevent 404 errors for arm64
-          sudo sed -i 's/^deb http/deb [arch=amd64] http/g' /etc/apt/sources.list
-          sudo sed -i 's/^deb mirror/deb [arch=amd64] mirror/g' /etc/apt/sources.list
+          if [ -f /etc/apt/sources.list ]; then
+              sudo sed -i 's/^deb /deb [arch=amd64] /g' /etc/apt/sources.list
+          fi
           
-          # 2. Add the arm64 ports repositories
+          if [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then
+              sudo sed -i 's/^Types: deb$/Types: deb\nArchitectures: amd64/' /etc/apt/sources.list.d/ubuntu.sources
+          fi
+          
           echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -cs) main restricted universe multiverse" | sudo tee /etc/apt/sources.list.d/arm64.list
           echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -cs)-updates main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list.d/arm64.list
           echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -cs)-security main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list.d/arm64.list
           
           sudo apt-get update
           
-          # Remove amd64 version if present to avoid conflicts
           sudo apt-get remove -y libcurl4-openssl-dev || true
-          
-          # Install the arm64 version of libcurl dev package
           sudo apt-get install -y libcurl4-openssl-dev:arm64
 
       - name: Build linuxArm64

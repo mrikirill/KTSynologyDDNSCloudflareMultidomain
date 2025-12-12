@@ -159,6 +159,55 @@ For multiple domains: __subdomain.mydomain.com|vpn.mydomain.com__
 
 4. Enjoy 🍺 and __don't forget to deactivate SSH (step 1) if you don't need it__.
 
+## How to install via Synology Task Scheduler
+
+If you prefer not to use the built-in DDNS service or want more control, you can run the agent via Synology Task Scheduler.
+
+1. **Download the agent:**
+   
+   SSH into your Synology device and download the agent to a persistent location (e.g., `/volume1/homes/admin/`):
+
+   ```bash
+   # For DSM (Linux x64)
+   wget https://github.com/mrikirill/KTSynologyDDNSCloudflareMultidomain/releases/latest/download/KTSynologyDDNSCloudflareMultidomainLinuxX64.kexe -O /volume1/homes/admin/KTSynologyDDNSCloudflareMultidomain.kexe
+   
+   # For SRM (Linux ARM64)
+   wget https://github.com/mrikirill/KTSynologyDDNSCloudflareMultidomain/releases/latest/download/KTSynologyDDNSCloudflareMultidomainLinuxArm64.kexe -O /volume1/homes/admin/KTSynologyDDNSCloudflareMultidomain.kexe
+   ```
+
+2. **Make it executable:**
+
+   ```bash
+   chmod +x /volume1/homes/admin/KTSynologyDDNSCloudflareMultidomain.kexe
+   ```
+
+3. **Create a Scheduled Task:**
+
+   a. Open **Control Panel** > **Task Scheduler**.
+   
+   b. Click **Create** > **Scheduled Task** > **User-defined script**.
+   
+   c. In the **General** tab:
+      * **Task:** Give it a name (e.g., "Cloudflare DDNS Update").
+      * **User:** Select `root` (required to update network settings if needed, though mostly for file access).
+   
+   d. In the **Schedule** tab:
+      * Set it to run daily or at your preferred interval (e.g., every 5 minutes).
+   
+   e. In the **Task Settings** tab, enter the following in the **User-defined script** box:
+
+      ```bash
+      /volume1/homes/admin/KTSynologyDDNSCloudflareMultidomain.kexe "domain1.com|sub.domain2.com" "YOUR_CLOUDFLARE_API_KEY"
+      ```
+      
+      * Replace `domain1.com|sub.domain2.com` with your actual domains (separated by `|`).
+      * Replace `YOUR_CLOUDFLARE_API_KEY` with your Cloudflare API Key.
+      * The agent will automatically detect your public IPv4 and IPv6 addresses.
+
+4. **Save and Test:**
+   
+   Click **OK** to save. You can select the task and click **Run** to test it immediately. Check the output in the "Action" > "View Result" menu if enabled.
+
 ## Troubleshooting and known issues
 
 ### Cloudflare API free domains limitation
