@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 data class DnsRecordDto(
     val id: String,
     @SerialName("zone_id")
-    val zoneId: String,
+    val zoneId: String? = null,
     val type: DnsRecordTypeEnumDto,
     val name: String,
     val content: String,
