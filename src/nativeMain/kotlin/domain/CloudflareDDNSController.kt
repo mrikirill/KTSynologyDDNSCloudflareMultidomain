@@ -73,11 +73,13 @@ class CloudflareDDNSController(
                     // but relaxed the check to >= 1 to avoid skipping if user has multiple records.
                     val dnsRecord = when (dnsRecordRequest.type) {
                         DnsRecordTypeEnumDto.A -> dnsRecords.result.first().copy(
-                            content = ipv4
+                            content = ipv4,
+                            zoneId = dnsRecordRequest.zoneId
                         )
                         DnsRecordTypeEnumDto.AAAA -> ipv6?.let {
                             dnsRecords.result.first().copy(
-                                content = it
+                                content = it,
+                                zoneId = dnsRecordRequest.zoneId
                             )
                         }
                     }

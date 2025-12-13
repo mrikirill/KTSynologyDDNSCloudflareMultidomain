@@ -65,13 +65,14 @@ fun main(args: Array<String>) = runBlocking {
     try {
         val ipifyService = IpifyServiceImpl(httpClient)
 
-        val synologyInput = when (args.size) {
-            4 -> SynologyInput(
+        val synologyInput = if (args.size >= 4) {
+            SynologyInput(
                 cloudflareApiKey = args[1],
                 hostnameList = args[0], // we use the username field to pass the hostname list
                 ip = args[3], // synology passes the ipv4 address
             )
-            2 -> SynologyInput(
+        } else if (args.size == 2) {
+            SynologyInput(
                 cloudflareApiKey = args[1],
                 hostnameList = args[0],
                 ip = try {
@@ -81,10 +82,9 @@ fun main(args: Array<String>) = runBlocking {
                     exitProcess(0)
                 }
             )
-            else -> {
-                println(SynologyOutput.BAD_PARAMS)
-                exitProcess(0)
-            }
+        } else {
+            println(SynologyOutput.BAD_PARAMS)
+            exitProcess(0)
         }
 
         val ipv6 = try {
