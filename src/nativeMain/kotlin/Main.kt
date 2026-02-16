@@ -74,7 +74,7 @@ fun main(args: Array<String>) = runBlocking {
 
     debug("Debug mode enabled")
     debug("Arguments (${filteredArgs.size}): [${filteredArgs.mapIndexed { i, a ->
-        if (i == 1) "****" else a  // mask the API token
+        if (i == 1) "****" else a
     }.joinToString(", ")}]")
 
     val httpClient = HttpClient(Curl) {
