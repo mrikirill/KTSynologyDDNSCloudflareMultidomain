@@ -2,6 +2,8 @@ package domain
 
 import data.CloudflareService
 import data.model.*
+import io.ktor.client.plugins.ClientRequestException
+import io.ktor.client.plugins.ServerResponseException
 
 class CloudflareDDNSController(
     private val cloudflareService: CloudflareService,
@@ -17,25 +19,45 @@ class CloudflareDDNSController(
         try {
             val token = cloudflareService.verifyToken().result
             if (token.status != TokenStatus.ACTIVE) {
-                throw SynologyException(SynologyOutput.AUTH_FAILED)
+                throw SynologyException(
+                    SynologyOutput.AUTH_FAILED,
+                    "Token status is ${token.status}, expected ACTIVE"
+                )
             }
+        } catch (e: SynologyException) {
+            throw e
+        } catch (e: ClientRequestException) {
+            throw SynologyException(
+                SynologyOutput.AUTH_FAILED,
+                "Token verification failed with HTTP ${e.response.status.value}: ${e.message}"
+            )
+        } catch (e: ServerResponseException) {
+            throw SynologyException(
+                SynologyOutput.DDNS_FAILED,
+                "Cloudflare server error during token verification: ${e.response.status.value} - ${e.message}"
+            )
         } catch (e: Exception) {
-            if (e is SynologyException) throw e
-            throw SynologyException(SynologyOutput.AUTH_FAILED)
+            throw SynologyException(
+                SynologyOutput.BAD_CONN,
+                "Connection failed during token verification: ${e::class.simpleName} - ${e.message}"
+            )
         }
     }
 
     suspend fun matchHostnamesWithZones() {
         try {
             if (hostnameList.isEmpty()) {
-                throw SynologyException(SynologyOutput.NO_HOSTNAME)
+                throw SynologyException(SynologyOutput.NO_HOSTNAME, "Hostname list is empty")
             }
             val hostnameList = extractHostnameList(hostnameList)
             val zones = cloudflareService.getZones()
             zones.result.forEach { zone ->
                 hostnameList.forEach { hostname ->
                     if (!isHostnameFQDN(hostname)) {
-                        throw SynologyException(SynologyOutput.HOSTNAME_INCORRECT)
+                        throw SynologyException(
+                            SynologyOutput.HOSTNAME_INCORRECT,
+                            "Hostname '$hostname' is not a fully-qualified domain name"
+                        )
                     }
                     if (hostname.contains(zone.name)) {
                          dnsRecordListRequest += DnsRecordListRequestDto(
@@ -55,15 +77,33 @@ class CloudflareDDNSController(
                 }
             }
             if (dnsRecordListRequest.isEmpty()) {
-                throw SynologyException(SynologyOutput.NO_HOSTNAME)
+                throw SynologyException(
+                    SynologyOutput.NO_HOSTNAME,
+                    "No matching zones found for hostnames: ${hostnameList.joinToString(", ")}"
+                )
             }
+        } catch (e: SynologyException) {
+            throw e
+        } catch (e: ClientRequestException) {
+            throw SynologyException(
+                SynologyOutput.AUTH_FAILED,
+                "Failed to fetch zones with HTTP ${e.response.status.value}: ${e.message}"
+            )
+        } catch (e: ServerResponseException) {
+            throw SynologyException(
+                SynologyOutput.DDNS_FAILED,
+                "Cloudflare server error while fetching zones: ${e.response.status.value} - ${e.message}"
+            )
         } catch (e: Exception) {
-            if (e is SynologyException) throw e
-            throw SynologyException(SynologyOutput.NO_HOSTNAME)
+            throw SynologyException(
+                SynologyOutput.BAD_CONN,
+                "Connection error while fetching zones: ${e::class.simpleName} - ${e.message}"
+            )
         }
     }
 
     suspend fun setDnsRecords() {
+        val errors = mutableListOf<String>()
         dnsRecordListRequest.forEach { dnsRecordRequest ->
             try {
                 val dnsRecords = cloudflareService.getDnsRecords(dnsRecordRequest)
@@ -88,15 +128,19 @@ class CloudflareDDNSController(
                     }
                 }
             } catch (e: Exception) {
-                // allow to continue
+                errors += "Failed to get DNS record for ${dnsRecordRequest.name} (${dnsRecordRequest.type}): ${e::class.simpleName} - ${e.message}"
             }
         }
         if (dnsRecordList.isEmpty()) {
-            throw SynologyException(SynologyOutput.DDNS_FAILED)
+            throw SynologyException(
+                SynologyOutput.DDNS_FAILED,
+                "No DNS records could be retrieved. Errors: ${errors.joinToString("; ")}"
+            )
         }
     }
 
     suspend fun updateDnsRecords() {
+        val errors = mutableListOf<String>()
         dnsRecordList.forEach { dnsRecord ->
             try {
                 val res = cloudflareService.updateDnsRecord(dnsRecord)
@@ -104,11 +148,14 @@ class CloudflareDDNSController(
                     dnsRecordUpdateList += res
                 }
             } catch (e: Exception) {
-                // allow to continue
+                errors += "Failed to update DNS record ${dnsRecord.name} (${dnsRecord.type}): ${e::class.simpleName} - ${e.message}"
             }
         }
         if (dnsRecordUpdateList.isEmpty()) {
-            throw SynologyException(SynologyOutput.BAD_HTTP_REQUEST)
+            throw SynologyException(
+                SynologyOutput.BAD_HTTP_REQUEST,
+                "No DNS records could be updated. Errors: ${errors.joinToString("; ")}"
+            )
         } else {
             throw SynologyException(SynologyOutput.SUCCESS)
         }
