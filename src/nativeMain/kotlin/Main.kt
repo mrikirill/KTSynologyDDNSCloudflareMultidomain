@@ -11,9 +11,28 @@ import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.addressOf
+import kotlinx.cinterop.convert
+import kotlinx.cinterop.usePinned
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
+import platform.posix.write
 import kotlin.system.exitProcess
+
+private var debugMode = false
+
+@OptIn(ExperimentalForeignApi::class)
+private fun printStderr(message: String) {
+    val bytes = (message + "\n").encodeToByteArray()
+    bytes.usePinned { pinned ->
+        write(2, pinned.addressOf(0), bytes.size.convert())
+    }
+}
+
+private fun debug(message: String) {
+    if (debugMode) printStderr("[DEBUG] $message")
+}
 
 /**
  * From /etc.defaults/ddns_provider.conf
@@ -43,9 +62,21 @@ import kotlin.system.exitProcess
  *       badagent - The user agent sent bad request(like HTTP method/parameters is not permitted)
  *       badresolv - Failed to connect to  because failed to resolve provider address.
  *       badconn - Failed to connect to provider because connection timeout.
+ *
+ * Debug mode:
+ *       Append --debug as the last argument to enable verbose diagnostic output to stderr.
+ *       Example: ./KTSynologyDDNSCloudflareMultidomain.kexe "hostname" "token" "any" "ip" --debug
  */
 
 fun main(args: Array<String>) = runBlocking {
+    debugMode = args.any { it == "--debug" }
+    val filteredArgs = args.filter { it != "--debug" }
+
+    debug("Debug mode enabled")
+    debug("Arguments (${filteredArgs.size}): [${filteredArgs.mapIndexed { i, a ->
+        if (i == 1) "****" else a
+    }.joinToString(", ")}]")
+
     val httpClient = HttpClient(Curl) {
         expectSuccess = true
         headers {
@@ -65,31 +96,43 @@ fun main(args: Array<String>) = runBlocking {
     try {
         val ipifyService = IpifyServiceImpl(httpClient)
 
-        val synologyInput = if (args.size >= 4) {
+        val synologyInput = if (filteredArgs.size >= 4) {
             SynologyInput(
-                cloudflareApiKey = args[1],
-                hostnameList = args[0], // we use the username field to pass the hostname list
-                ip = args[3], // synology passes the ipv4 address
+                cloudflareApiKey = filteredArgs[1],
+                hostnameList = filteredArgs[0], // we use the username field to pass the hostname list
+                ip = filteredArgs[3], // synology passes the ipv4 address
             )
-        } else if (args.size == 2) {
+        } else if (filteredArgs.size == 2) {
             SynologyInput(
-                cloudflareApiKey = args[1],
-                hostnameList = args[0],
+                cloudflareApiKey = filteredArgs[1],
+                hostnameList = filteredArgs[0],
                 ip = try {
-                    ipifyService.getIpV4().ip
+                    debug("Fetching IPv4 address from ipify...")
+                    val ip = ipifyService.getIpV4().ip
+                    debug("IPv4 address: $ip")
+                    ip
                 } catch (e: Exception) {
+                    debug("Failed to fetch IPv4: ${e::class.simpleName} - ${e.message}")
                     println(SynologyOutput.BAD_CONN)
                     exitProcess(0)
                 }
             )
         } else {
+            debug("Invalid number of arguments: ${filteredArgs.size}")
             println(SynologyOutput.BAD_PARAMS)
             exitProcess(0)
         }
 
+        debug("Hostnames: ${synologyInput.hostnameList}")
+        debug("IPv4: ${synologyInput.ip}")
+
         val ipv6 = try {
-            ipifyService.getIpV6().ip
+            debug("Fetching IPv6 address from ipify...")
+            val ip = ipifyService.getIpV6().ip
+            debug("IPv6 address: $ip")
+            ip
         } catch (e: Exception) {
+            debug("IPv6 not available: ${e::class.simpleName} - ${e.message}")
             null
         }
 
@@ -104,13 +147,25 @@ fun main(args: Array<String>) = runBlocking {
         )
 
         try {
+            debug("Step 1/4: Verifying Cloudflare API token...")
             controller.verifyToken()
+            debug("Step 1/4: Token verified successfully")
+
+            debug("Step 2/4: Matching hostnames with Cloudflare zones...")
             controller.matchHostnamesWithZones()
+            debug("Step 2/4: Matched ${controller.getDnsRecordListRequest().size} DNS record request(s)")
+
+            debug("Step 3/4: Fetching existing DNS records...")
             controller.setDnsRecords()
+            debug("Step 3/4: Found ${controller.getDnsRecordList().size} DNS record(s) to update")
+
+            debug("Step 4/4: Updating DNS records...")
             controller.updateDnsRecords()
         } catch (e: SynologyException) {
+            e.detail?.let { debug(it) }
             println(e.message)
         } catch (e: Exception) {
+            debug("Unexpected error: ${e::class.simpleName} - ${e.message}")
             println(SynologyOutput.UNKNOWN_ERROR)
         }
     } finally {

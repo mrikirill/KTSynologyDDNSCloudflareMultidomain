@@ -264,6 +264,7 @@ class CloudflareDDNSControllerTest {
     }
 
     private val client = HttpClient(mockEngine) {
+        expectSuccess = true
         install(ContentNegotiation) {
             json(Json {
                 ignoreUnknownKeys = true

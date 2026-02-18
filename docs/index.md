@@ -202,17 +202,42 @@ Source [Identifying network ports compatible with Cloudflare's proxy](https://su
 
 ## Debug
 
-You can run this script directly to see output logs
+You can run the agent manually via SSH to diagnose issues. Append `--debug` to enable verbose diagnostic output.
 
 * SSH into your Synology system
 
-* Run this command:
+* Run the agent with the `--debug` flag:
+
+```bash
+./KTSynologyDDNSCloudflareMultidomain.kexe "domain1.com|vpn.domain2.com" "your-Cloudflare-token" "any" "1.2.3.4" --debug
+```
+
+* The `--debug` flag outputs step-by-step diagnostics to **stderr** while the Synology-compatible status code is still printed to **stdout**. This means:
+  - **Without `--debug`:** only the status code is printed (e.g., `good`, `badauth`, `badconn`) — safe for Synology's DDNS runner.
+  - **With `--debug`:** detailed progress and error information is printed to stderr, helping you pinpoint the exact issue.
+
+* Example debug output:
 
 ```
-./KTSynologyDDNSCloudflareMultidomain.kexe "domain1.com|vpn.domain2.com" "your-Cloudflare-token" "any" "1.2.3.4 - ipv4 address"
+[DEBUG] Debug mode enabled
+[DEBUG] Arguments (4): [domain1.com|vpn.domain2.com, ****, any, 1.2.3.4]
+[DEBUG] Hostnames: domain1.com|vpn.domain2.com
+[DEBUG] IPv4: 1.2.3.4
+[DEBUG] Fetching IPv6 address from ipify...
+[DEBUG] IPv6 not available: ...
+[DEBUG] Step 1/4: Verifying Cloudflare API token...
+[DEBUG] Step 1/4: Token verified successfully
+[DEBUG] Step 2/4: Matching hostnames with Cloudflare zones...
+[DEBUG] Step 2/4: Matched 2 DNS record request(s)
+[DEBUG] Step 3/4: Fetching existing DNS records...
+[DEBUG] Step 3/4: Found 2 DNS record(s) to update
+[DEBUG] Step 4/4: Updating DNS records...
+good
 ```
 
-* Check output logs
+> **Note:** The API token is automatically masked in debug output for security.
+
+> **Tip:** If you're getting `badauth` but your token works with `curl`, run with `--debug` — the real error is likely a connection issue (`badconn`) that was previously reported as `badauth`.
 
 ## Output messages
 
