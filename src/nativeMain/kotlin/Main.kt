@@ -36,6 +36,32 @@ private fun debug(message: String) {
     if (debugMode) printStderr("[DEBUG] $message")
 }
 
+@OptIn(ExperimentalForeignApi::class)
+private fun getSystemInfo(): String {
+    val os = runCommand("uname -s") ?: "Unknown"
+    val release = runCommand("uname -r") ?: ""
+    val machine = runCommand("uname -m") ?: "Unknown"
+    val arch = when (machine) {
+        "x86_64", "amd64" -> "x86_64"
+        "aarch64", "arm64" -> "ARM64"
+        "armv7l" -> "ARM32"
+        else -> machine
+    }
+    return "$os $release ($arch)"
+}
+
+@OptIn(ExperimentalForeignApi::class)
+private fun runCommand(command: String): String? {
+    val fp = popen(command, "r") ?: return null
+    val buffer = ByteArray(256)
+    val result = buffer.usePinned { pinned ->
+        val read = fgets(pinned.addressOf(0), buffer.size, fp)
+        read?.toKString()?.trim()
+    }
+    pclose(fp)
+    return result
+}
+
 /**
  * Writes the embedded Mozilla CA bundle to a temporary file.
  * Returns the path to the temp file, or null if writing fails.
@@ -99,6 +125,7 @@ fun main(args: Array<String>) = runBlocking {
     val filteredArgs = args.filter { it != "--debug" }
 
     debug("Debug mode enabled")
+    debug("System: ${getSystemInfo()}")
     debug("Arguments (${filteredArgs.size}): [${filteredArgs.mapIndexed { i, a ->
         if (i == 1) "****" else a
     }.joinToString(", ")}]")
