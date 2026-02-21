@@ -1,4 +1,5 @@
 import config.Config
+import config.EMBEDDED_CA_BUNDLE
 import data.CloudflareServiceImpl
 import data.IpifyServiceImpl
 import domain.CloudflareDDNSController
@@ -14,10 +15,11 @@ import io.ktor.serialization.kotlinx.json.*
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.convert
+import kotlinx.cinterop.toKString
 import kotlinx.cinterop.usePinned
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
-import platform.posix.write
+import platform.posix.*
 import kotlin.system.exitProcess
 
 private var debugMode = false
@@ -32,6 +34,30 @@ private fun printStderr(message: String) {
 
 private fun debug(message: String) {
     if (debugMode) printStderr("[DEBUG] $message")
+}
+
+/**
+ * Writes the embedded Mozilla CA bundle to a temporary file.
+ * Returns the path to the temp file, or null if writing fails.
+ */
+@OptIn(ExperimentalForeignApi::class)
+private fun writeEmbeddedCaBundleToTempFile(): String? {
+    val tmpDir = getenv("TMPDIR")?.toKString() ?: "/tmp"
+    val path = "$tmpDir/ktor_cacert.pem"
+    val fd = fopen(path, "w") ?: run {
+        debug("Failed to open $path for writing")
+        return null
+    }
+    try {
+        val bytes = EMBEDDED_CA_BUNDLE.encodeToByteArray()
+        bytes.usePinned { pinned ->
+            fwrite(pinned.addressOf(0), 1u.convert(), bytes.size.convert(), fd)
+        }
+        debug("Embedded CA bundle written to $path (${bytes.size} bytes)")
+    } finally {
+        fclose(fd)
+    }
+    return path
 }
 
 /**
@@ -79,6 +105,15 @@ fun main(args: Array<String>) = runBlocking {
 
     val httpClient = HttpClient(Curl) {
         expectSuccess = true
+        engine {
+            val embeddedPath = writeEmbeddedCaBundleToTempFile()
+            if (embeddedPath != null) {
+                caInfo = embeddedPath
+                debug("CA bundle: $embeddedPath")
+            } else {
+                debug("WARNING: Failed to write CA bundle to temp file, TLS verification may fail")
+            }
+        }
         headers {
             append(HttpHeaders.ContentType, ContentType.Application.Json)
         }
@@ -166,7 +201,12 @@ fun main(args: Array<String>) = runBlocking {
             println(e.message)
         } catch (e: Exception) {
             debug("Unexpected error: ${e::class.simpleName} - ${e.message}")
-            println(SynologyOutput.UNKNOWN_ERROR)
+            if (e.message?.contains("SSL") == true || e.message?.contains("certificate") == true) {
+                debug("TLS verification failed. Hint: Ensure CA certificates are installed (e.g., ca-certificates package)")
+                println(SynologyOutput.BAD_CONN)
+            } else {
+                println(SynologyOutput.UNKNOWN_ERROR)
+            }
         }
     } finally {
         httpClient.close()

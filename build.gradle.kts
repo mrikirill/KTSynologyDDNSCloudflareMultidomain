@@ -40,6 +40,7 @@ kotlin {
 
     sourceSets {
         val nativeMain by getting {
+            kotlin.srcDir(layout.buildDirectory.dir("generated/caBundleSrc"))
             dependencies {
                 implementation(libs.ktor.client.core)
                 implementation(libs.ktor.client.curl)
@@ -61,4 +62,34 @@ kotlin {
             }
         }
     }
+}
+
+val generateCaBundleSource by tasks.registering {
+    val pemFile = file("src/nativeMain/resources/cacert.pem")
+    val outputDir = layout.buildDirectory.dir("generated/caBundleSrc")
+
+    inputs.file(pemFile)
+    outputs.dir(outputDir)
+
+    doLast {
+        val pemContent = pemFile.readText()
+        val outputFile = outputDir.get().file("CaBundle.kt").asFile
+        outputFile.parentFile.mkdirs()
+        outputFile.writeText(buildString {
+            appendLine("// AUTO-GENERATED from cacert.pem — do not edit")
+            appendLine("// Source: https://curl.se/ca/cacert.pem (Mozilla CA bundle)")
+            appendLine("package config")
+            appendLine()
+            appendLine("internal val EMBEDDED_CA_BUNDLE: String =")
+            appendLine("\"\"\"")
+            append(pemContent)
+            if (!pemContent.endsWith("\n")) appendLine()
+            appendLine("\"\"\"")
+            appendLine(".trimIndent()")
+        })
+    }
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinNativeCompile>().configureEach {
+    dependsOn(generateCaBundleSource)
 }
