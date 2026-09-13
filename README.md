@@ -49,7 +49,9 @@ This project is based on [the original PHP version of the agent](https://github.
 * Compatible with both IPv4 and IPv6 dual stack.
 
 ## SRM Support
-[SRM-based devices](https://www.synology.com/en-global/products/routers) use the Linux ARM64 architecture. The agent has a build target for Linux ARM64 and works on SRM devices. You can download the latest release for Linux ARM64 from the [releases page](https://github.com/mrikirill/KTSynologyDDNSCloudflareMultidomain/releases).
+The installer supports `aarch64` (Linux ARM64) and `x86_64` systems. Linux ARM64 binaries are available on the [releases page](https://github.com/mrikirill/KTSynologyDDNSCloudflareMultidomain/releases).
+
+Use `sudo sh install.sh`: SRM may not include Bash. The installer uses `/bin/sh` syntax and has isolated shell compatibility tests. The reporter of [issue #8](https://github.com/mrikirill/KTSynologyDDNSCloudflareMultidomain/issues/8) confirmed that invoking the installer with `sh` works on an RT6600ax running SRM 1.3.2-9366 Update 2. Full installation and DDNS operation still need verification on the target SRM device; shell tests do not establish firmware or binary compatibility.
 
 ## Build the agent locally
 
@@ -129,7 +131,7 @@ This is the easiest and most reliable method. It runs the agent periodically via
    SSH into your Synology device and run the installation script:
 
    ```bash
-   wget https://raw.githubusercontent.com/mrikirill/KTSynologyDDNSCloudflareMultidomain/master/install.sh -O install.sh && sudo bash install.sh
+   wget https://raw.githubusercontent.com/mrikirill/KTSynologyDDNSCloudflareMultidomain/master/install.sh -O install.sh && sudo sh install.sh
    ```
    
    This will download the correct binary for your system to `/usr/syno/bin/ddns/KTSynologyDDNSCloudflareMultidomain.kexe`.
@@ -180,7 +182,7 @@ This method integrates the agent into Synology's "External Access" > "DDNS" menu
 2. **Connect via SSH:** Connect to your supported device via SSH and run this command:
 
   ```
-  wget https://raw.githubusercontent.com/mrikirill/KTSynologyDDNSCloudflareMultidomain/master/install.sh -O install.sh && sudo bash install.sh
+  wget https://raw.githubusercontent.com/mrikirill/KTSynologyDDNSCloudflareMultidomain/master/install.sh -O install.sh && sudo sh install.sh
   ```
 
 

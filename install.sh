@@ -1,10 +1,10 @@
-#!/bin/bash
+#!/bin/sh
 
 # Check if system is LinuxX64 or LinuxArm64
 ARCH=$(uname -m)
-if [[ "$ARCH" == "aarch64" ]]; then
+if [ "$ARCH" = "aarch64" ]; then
     SYSTEM="LinuxArm64"
-elif [[ "$ARCH" == "x86_64" ]]; then
+elif [ "$ARCH" = "x86_64" ]; then
     SYSTEM="LinuxX64"
 else
     echo "Unsupported architecture: $ARCH"
@@ -17,9 +17,7 @@ DOWNLOAD_PATH="/tmp/KTSynologyDDNSCloudflareMultidomain${SYSTEM}.kexe"
 
 # Download the latest release based on the system
 echo "Downloading from $REPO_URL..."
-curl -L -o "$DOWNLOAD_PATH" "$REPO_URL"
-
-if [ $? -ne 0 ]; then
+if ! curl -L -o "$DOWNLOAD_PATH" "$REPO_URL"; then
     echo "Failed to download the latest release for $SYSTEM."
     exit 1
 fi
@@ -33,13 +31,12 @@ sudo chmod 755 "$TARGET_FILE"
 
 # Modify /etc.defaults/ddns_provider.conf
 CONF_FILE="/etc.defaults/ddns_provider.conf"
-STRING_TO_ADD="[Cloudflare]\n  modulepath=/usr/syno/bin/ddns/KTSynologyDDNSCloudflareMultidomain.kexe\n  queryurl=https://www.cloudflare.com/"
 
 if grep -q "\[Cloudflare\]" "$CONF_FILE"; then
     echo "Removing existing Cloudflare configuration..."
     sudo sed -i '/^\[Cloudflare\]/,/^\[/ { /^\[Cloudflare\]/d; /^\[/!d; }' "$CONF_FILE"
 fi
 
-echo -e "$STRING_TO_ADD" | sudo tee -a "$CONF_FILE" > /dev/null
+printf '%s\n' '[Cloudflare]' "  modulepath=$TARGET_FILE" '  queryurl=https://www.cloudflare.com/' | sudo tee -a "$CONF_FILE" > /dev/null
 
 echo "Installation complete for $SYSTEM."
