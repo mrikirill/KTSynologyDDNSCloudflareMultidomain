@@ -1,0 +1,21 @@
+name: Installer tests
+
+on: [push, pull_request]
+
+jobs:
+  installer:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        shell: [dash, 'busybox sh', bash]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install shell test tools
+        run: sudo apt-get update && sudo apt-get install -y busybox shellcheck
+      - name: Check POSIX shell compatibility
+        run: shellcheck --shell=sh install.sh
+      - name: Test installer without root or network access
+        env:
+          INSTALL_TEST_SHELL: ${{ matrix.shell }}
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python3 -m unittest discover -s tests -v
