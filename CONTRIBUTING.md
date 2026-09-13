@@ -56,6 +56,30 @@ To run the unit tests:
 ./gradlew check
 ```
 
+### Testing the Installer
+
+Installer tests require Python 3 and the shell being tested, but no Synology
+device, root access, or network connection:
+
+```sh
+INSTALL_TEST_SHELL=dash PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -v
+shellcheck --shell=sh install.sh
+```
+
+CI also runs these tests with `INSTALL_TEST_SHELL='busybox sh'` and `bash`.
+The tests redirect installation paths into a temporary directory and stub
+architecture detection, downloads, and privilege elevation. They verify ARM64
+and x64 asset selection, permissions, provider configuration output, unsupported
+architectures, and download failure handling. They do not run the native agent
+or verify SRM's utilities, existing provider replacement, or DDNS integration.
+
+For device QA, use the candidate `install.sh` (the `master` download command
+will only include the fix after it is merged). Record the model, SRM version,
+and `uname -m`; run `sudo sh install.sh`; confirm that Cloudflare appears in
+the DDNS provider list; then test a disposable DNS record and verify its value
+in Cloudflare. Share the installer output and DDNS result with credentials
+removed. Shell tests alone should not be reported as full SRM certification.
+
 ### Building for Linux (Cross-Compilation)
 
 Since this is a Kotlin Native project, building Linux binaries on macOS requires Docker.
